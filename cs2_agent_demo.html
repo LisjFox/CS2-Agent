@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>尚鸣惊人 — CS2 AI 教练</title>
+  
+  <script src="https://lf26-cdn-tos.bytecdntp.com/cdn/expire-1-M/tailwindcss/3.0.23/tailwind.min.js"></script>
+  
+  <link href="https://fonts.loli.net/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.loli.net/css2?family=Noto+Sans+SC:wght@300;400;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Noto Sans SC', 'Inter', sans-serif;
+      background: #000;
+      color: #fff;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+    
+    .slides-container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0a0a0a;
+    }
+    
+    .slide {
+      width: 100%;
+      height: 100%;
+      max-width: 450px;
+      max-height: 800px;
+      aspect-ratio: 9/16;
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2.5rem;
+      opacity: 0;
+      transform: translateX(100%);
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+      background: linear-gradient(180deg, #0a0a0a 0%, #000000 100%);
+    }
+    
+    .slide.active { opacity: 1; transform: translateX(0); }
+    .slide.prev { opacity: 0; transform: translateX(-100%); }
+    
+    .slide-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      width: 100%;
+    }
+    
+    .slide-content.left { text-align: left; }
+    .slide-content.left ul, .slide-content.left p { text-align: left; }
+    
+    /* 光斑 */
+    .light-spot {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.3;
+      pointer-events: none;
+    }
+    .light-spot-1 { width: 300px; height: 300px; background: #3b82f6; top: -100px; right: -100px; animation: float1 20s ease-in-out infinite; }
+    .light-spot-2 { width: 250px; height: 250px; background: #8b5cf6; bottom: -80px; left: -80px; animation: float2 25s ease-in-out infinite; }
+    .light-spot-3 { width: 200px; height: 200px; background: #06b6d4; top: 50%; left: 50%; transform: translate(-50%, -50%); animation: float3 18s ease-in-out infinite; }
+    .light-spot-4 { width: 260px; height: 260px; background: #f59e0b; top: -60px; left: -60px; animation: float4 22s ease-in-out infinite; }
+    .light-spot-5 { width: 220px; height: 220px; background: #10b981; bottom: -50px; right: -50px; animation: float5 19s ease-in-out infinite; }
+    
+    @keyframes float1 { 0%,100% { transform: translate(0,0); } 25% { transform: translate(-50px,30px); } 50% { transform: translate(30px,50px); } 75% { transform: translate(50px,-20px); } }
+    @keyframes float2 { 0%,100% { transform: translate(0,0); } 33% { transform: translate(40px,-40px); } 66% { transform: translate(-30px,30px); } }
+    @keyframes float3 { 0%,100% { transform: translate(-50%,-50%) scale(1); } 50% { transform: translate(-50%,-50%) scale(1.2); } }
+    @keyframes float4 { 0%,100% { transform: translate(0,0); } 33% { transform: translate(40px,40px); } 66% { transform: translate(-20px,-30px); } }
+    @keyframes float5 { 0%,100% { transform: translate(0,0); } 25% { transform: translate(-30px,-40px); } 75% { transform: translate(40px,20px); } }
+    
+    /* 占位框 */
+    .placeholder-box {
+      border: 2px dashed rgba(255,255,255,0.3);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 0.75rem 0;
+      background: rgba(255,255,255,0.05);
+      text-align: center;
+    }
+    .placeholder-box .icon { font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5; }
+    .placeholder-box .label { font-size: 0.85rem; color: rgba(255,255,255,0.5); font-weight: 300; }
+    
+    /* 对比框 */
+    .compare-col {
+      flex: 1;
+      padding: 1rem;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+    }
+    .compare-col.highlight { background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.3); }
+    
+    /* 标签 */
+    .tag {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      margin-right: 0.3rem;
+    }
+    .tag-blue { background: rgba(59,130,246,0.3); color: #93c5fd; }
+    .tag-purple { background: rgba(139,92,246,0.3); color: #c4b5fd; }
+    .tag-amber { background: rgba(245,158,11,0.3); color: #fcd34d; }
+    .tag-emerald { background: rgba(16,185,129,0.3); color: #6ee7b7; }
+    
+    /* 进度条 */
+    .progress-bar {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 6px;
+      z-index: 100;
+    }
+    .progress-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .progress-dot.active { background: #fff; transform: scale(1.3); }
+    .progress-dot:hover { background: rgba(255,255,255,0.5); }
+    
+    .page-number {
+      position: fixed;
+      bottom: 48px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.35);
+      z-index: 100;
+      font-weight: 300;
+      letter-spacing: 0.05em;
+    }
+    
+    /* 滚动的工具列表 */
+    .tool-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      width: 100%;
+    }
+    .tool-item {
+      background: rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 0.5rem 0.6rem;
+      font-size: 0.75rem;
+      color: #d1d5db;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .tool-item.li { border-color: rgba(59,130,246,0.3); }
+    .tool-item.pan { border-color: rgba(139,92,246,0.3); }
+    
+    .subtitle-line {
+      font-size: 0.85rem;
+      color: #9ca3af;
+      font-weight: 300;
+      line-height: 1.8;
+    }
+    
+    .dim-label {
+      font-size: 0.75rem;
+      color: #6b7280;
+      letter-spacing: 0.03em;
+    }
+  </style>
+</head>
+<body>
+  <div class="slides-container">
+    
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Slide 1: 封面页 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide active">
+      <div class="light-spot light-spot-1"></div>
+      <div class="light-spot light-spot-2"></div>
+      <div class="slide-content">
+        <p class="text-sm font-light text-gray-500 mb-4 tracking-widest">CS2 · AI COACH</p>
+        <h1 class="text-5xl font-black mb-4 leading-tight">尚鸣惊人</h1>
+        <div class="w-16 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mb-5"></div>
+        <p class="text-xl font-light text-gray-400 mb-2">一站式 CS2 数据分析 + 战术教练</p>
+        <p class="text-sm font-light text-gray-500">李尚基 × 潘一鸣</p>
+        <p class="text-sm font-light text-gray-600 mt-2">清华大学 · 2025</p>
+      </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Slide 2: 标题冲击 — 选题意义 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide">
+      <div class="light-spot light-spot-3"></div>
+      <div class="light-spot light-spot-5"></div>
+      <div class="slide-content">
+        <span class="text-xs font-light text-gray-500 tracking-widest block mb-6">01 · 选题意义</span>
+        <h1 class="text-4xl font-black leading-tight">
+          让 AI<br>当你的教练
+        </h1>
+        <p class="text-base font-light text-gray-400 mt-6">CS2 每天上百万玩家打排位</p>
+        <p class="text-base font-light text-gray-400">复盘？看几小时录像太累了</p>
+      </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Slide 3: 列表页 — 为什么要一个智能体 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide">
+      <div class="light-spot light-spot-1"></div>
+      <div class="light-spot light-spot-3"></div>
+      <div class="slide-content left" style="padding: 0 0.5rem;">
+        <span class="text-xs font-light text-gray-500 tracking-widest block mb-6 text-center">01 · 选题意义</span>
+        <h2 class="text-2xl font-bold mb-8 text-center">为什么需要一个智能体？</h2>
+        <ul class="space-y-5 text-lg">
+          <li class="text-gray-300 flex items-start gap-3">
+            <span class="text-blue-400 mt-0.5">◆</span>
+            <span><strong class="text-white">自动复盘</strong><br><span class="text-sm text-gray-400">3 秒解析整场 Demo，告别几小时录像</span></span>
+          </li>
+          <li class="text-gray-300 flex items-start gap-3">
+            <span class="text-purple-400 mt-0.5">◆</span>
+            <span><strong class="text-white">个性化指导</strong><br><span class="text-sm text-gray-400">LLM 根据你的数据给针对性训练建议</span></span>
+          </li>
+          <li class="text-gray-300 flex items-start gap-3">
+            <span class="text-cyan-400 mt-0.5">◆</span>
+            <span><strong class="text-white">职业对标</strong><br><span class="text-sm text-gray-400">20+ 职业选手数据对比，找到差距</span></span>
+          </li>
+          <li class="text-gray-300 flex items-start gap-3">
+            <span class="text-amber-400 mt-0.5">◆</span>
+            <span><strong class="text-white">实时指导</strong><br><span class="text-sm text-gray-400">GSI 实时监控，比赛中同步数据</span></span>
+          </li>
+        </ul>
+      </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Slide 4: 标题冲击 — 方案设计 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide">
+      <div class="light-spot light-spot-2"></div>
+      <div class="light-spot light-spot-4"></div>
+      <div class="slide-content">
+        <span class="text-xs font-light text-gray-500 tracking-widest block mb-6">02 · 方案设计</span>
+        <h1 class="text-4xl font-black leading-tight">
+          两个大脑<br>一个目标
+        </h1>
+        <p class="text-base font-light text-gray-400 mt-6">输入：.dem 文件 / GSI 实时数据</p>
+        <p class="text-base font-light text-gray-400">输出：HTML 报告 + AI 对话 + 战术指导</p>
+      </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Slide 5: 步骤说明 — 整体架构 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide">
+      <div class="light-spot light-spot-1"></div>
+      <div class="light-spot light-spot-3"></div>
+      <div class="slide-content left" style="padding: 0 0.5rem;">
+        <span class="text-xs font-light text-gray-500 tracking-widest block mb-6 text-center">02 · 方案设计</span>
+        <h2 class="text-xl font-bold mb-6 text-center">整体流程</h2>
+        <div class="space-y-3 text-sm">
+          <div class="flex items-center gap-3 bg-blue-500/10 rounded-lg p-3 border border-blue-500/20">
+            <span class="text-2xl font-black text-blue-400 w-8">01</span>
+            <div><span class="text-white font-bold">解析</span><br><span class="text-gray-400 text-xs">parser.py</span></div>
+            <span class="ml-auto text-gray-500 text-xs">.dem 文件</span>
+          </div>
+          <div class="flex items-center gap-3 bg-purple-500/10 rounded-lg p-3 border border-purple-500/20">
+            <span class="text-2xl font-black text-purple-400 w-8">02</span>
+            <div><span class="text-white font-bold">分析 + 可视化</span><br><span class="text-gray-400 text-xs">analysis.py + visualization.py</span></div>
+            <span class="ml-auto text-gray-500 text-xs">热力图/雷达图</span>
+          </div>
+          <div class="flex items-center gap-3 bg-cyan-500/10 rounded-lg p-3 border border-cyan-500/20">
+            <span class="text-2xl font-black text-cyan-400 w-8">03</span>
+            <div><span class="text-white font-bold">报告生成</span><br><span class="text-gray-400 text-xs">report.py</span></div>
+            <span class="ml-auto text-gray-500 text-xs">单文件 HTML</span>
+          </div>
+          <div class="flex items-center gap-3 bg-amber-500/10 rounded-lg p-3 border border-amber-500/20">
+            <span class="text-2xl font-black text-amber-400 w-8">04</span>
+            <div><span class="text-white font-bold">AI 对话 + 战术分析</span><br><span class="text-gray-400 text-xs">dialog.py + pan_coach.py</span></div>
+            <span class="ml-auto text-gray-500 text-xs">@tool + LLM</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Slide 6: 对比页 — 双 Agent 分工 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide">
+      <div class="light-spot light-spot-1"></div>
+      <div class="light-spot light-spot-2"></div>
+      <div class="slide-content">
+        <span class="text-xs font-light text-gray-500 tracking-widest block mb-5">02 · 方案设计</span>
+        <h2 class="text-lg font-bold mb-5">双 Agent 协作</h2>
+        <div class="flex gap-3 text-left" style="width:100%;">
+          <div class="compare-col highlight">
+            <p class="text-sm font-bold text-blue-400 mb-3">李尚基<br><span class="text-xs text-blue-300/60 font-light">数据分析引擎</span></p>
+            <ul class="space-y-2 text-xs text-gray-300">
+              <li>▸ Demo 解析（击杀/位置/武器）</li>
+              <li>▸ 数据可视化（Matplotlib）</li>
+              <li>▸ HTML 报告生成</li>
+              <li>▸ 长期 + 短期记忆</li>
+              <li>▸ 职业选手对比系统</li>
+              <li>▸ GSI 实时监控</li>
+            </ul>
+          </div>
+          <div class="compare-col" style="border-color:rgba(139,92,246,0.3);background:rgba(139,92,246,0.08);">
+            <p class="text-sm font-bold text-purple-400 mb-3">潘一鸣<br><span class="text-xs text-purple-300/60 font-light">战术知识引擎</span></p>
+            <ul class="space-y-2 text-xs text-gray-300">
+              <li>▸ 地图知识（6张比赛图）</li>
+              <li>▸ 投掷物路线</li>
+              <li>▸ 武器属性系统</li>
+              <li>▸ 经济策略模型</li>
+              <li>▸ ChromaDB 向量检索</li>
+              <li>▸ 残局战术推理</li>
+            </ul>
+          </div>
+        </div>
+        <p class="text-xs text-gray-500 mt-4">集成层 integration/ 无缝对接 → IntegratedCoach</p>
+      </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Slide 7: 列表页 — 11 个 @tool -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide">
+      <div class="light-spot light-spot-3"></div>
+      <div class="light-spot light-spot-5"></div>
+      <div class="slide-content">
+        <span class="text-xs font-light text-gray-500 tracking-widest block mb-5">02 · 方案设计</span>
+        <h2 class="text-lg font-bold mb-4">11 个 @tool 工具</h2>
+        <div class="tool-grid">
+          <div class="tool-item li">🔍 get_player_history</div>
+          <div class="tool-item li">📈 get_player_trend</div>
+          <div class="tool-item li">👥 get_all_players</div>
+          <div class="tool-item li">📋 get_training_plan</div>
+          <div class="tool-item li">🔫 get_weapon_advice</div>
+          <div class="tool-item li">🏆 compare_with_pro</div>
+          <div class="tool-item li">📊 get_pro_leaderboard</div>
+          <div class="tool-item pan">📚 query_knowledge</div>
+          <div class="tool-item pan">🗺️ get_map_tactics</div>
+          <div class="tool-item pan">💣 get_grenade_routes</div>
+          <div class="tool-item pan">💰 get_eco_advice</div>
+        </div>
+        <div class="flex gap-3 justify-center mt-4">
+          <span class="tag tag-blue">李尚基 × 7</span>
+          <span class="tag tag-purple">潘一鸣 × 4</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Slide 8: 标题冲击 — 特色创新 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide">
+      <div class="light-spot light-spot-4"></div>
+      <div class="light-spot light-spot-5"></div>
+      <div class="slide-content">
+        <span class="text-xs font-light text-gray-500 tracking-widest block mb-6">03 · 特色与创新</span>
+        <h1 class="text-4xl font-black leading-tight">
+          七个杀手锏
+        </h1>
+        <p class="text-sm font-light text-gray-500 mt-6">不只是做出来了，还要做得漂亮</p>
+      </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Slide 9: 数据页 — 职业选手 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide">
+      <div class="light-spot light-spot-1"></div>
+      <div class="light-spot light-spot-2"></div>
+      <div class="slide-content">
+        <span class="text-xs font-light text-gray-500 tracking-widest block mb-5">03 · 特色与创新</span>
+        <div class="flex items-center justify-center gap-1 mb-3">
+          <span class="text-6xl font-black text-white">20+</span>
+          <span class="dim-label text-left leading-tight" style="font-size:0.65rem;">
+            选<br>手
+          </span>
+        </div>
+        <p class="text-lg font-light text-gray-400 mb-6">职业选手 × 12 维度</p>
+        <div class="grid grid-cols-3 gap-2 text-center" style="width:100%;">
+          <div><span class="text-sm font-bold text-blue-400">K/D</span><br><span class="dim-label">击杀比</span></div>
+          <div><span class="text-sm font-bold text-purple-400">HS%</span><br><span class="dim-label">爆头率</span></div>
+          <div><span class="text-sm font-bold text-cyan-400">ADR</span><br><span class="dim-label">场均伤害</span></div>
+          <div><span class="text-sm font-bold text-amber-400">Rating</span><br><span class="dim-label">综合评分</span></div>
+          <div><span class="text-sm font-bold text-emerald-400">Impact</span><br><span class="dim-label">影响力</span></div>
+          <div><span class="text-sm font-bold text-pink-400">KPR</span><br><span class="dim-label">回合击杀</span></div>
+        </div>
+        <div class="grid grid-cols-3 gap-2 text-center mt-3" style="width:100%;">
+          <div><span class="text-sm font-bold" style="color:#a78bfa;">KAST</span><br><span class="dim-label">存活贡献</span></div>
+          <div><span class="text-sm font-bold" style="color:#f472b6;">Clutch%</span><br><span class="dim-label">残局胜率</span></div>
+          <div><span class="text-sm font-bold" style="color:#34d399;">Multi%</span><br><span class="dim-label">多杀率</span></div>
+          <div><span class="text-sm font-bold" style="color:#fbbf24;">OpenKPR</span><br><span class="dim-label">首杀率</span></div>
+          <div><span class="text-sm font-bold" style="color:#60a5fa;">UtilDmg</span><br><span class="dim-label">道具伤害</span></div>
+          <div><span class="text-sm font-bold" style="color:#e879f9;">Flash</span><br><span class="dim-label">闪助攻</span></div>
+        </div>
+        <p class="text-xs text-gray-500 mt-4">欧几里得距离 → 自动匹配最像你的选手</p>
+      </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Slide 10: 列表页 — 创新点汇总 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide">
+      <div class="light-spot light-spot-3"></div>
+      <div class="light-spot light-spot-5"></div>
+      <div class="slide-content left" style="padding: 0 0.3rem;">
+        <span class="text-xs font-light text-gray-500 tracking-widest block mb-5 text-center">03 · 特色与创新</span>
+        <h2 class="text-xl font-bold mb-5 text-center">七大创新亮点</h2>
+        <ul class="space-y-3 text-sm">
+          <li class="text-gray-300 flex gap-2">
+            <span class="text-blue-400 font-bold shrink-0">01</span>
+            <span><strong class="text-white">双 Agent 协作架构</strong><br><span class="text-gray-400 text-xs">数据分析 × 战术知识，通过集成层无缝配合</span></span>
+          </li>
+          <li class="text-gray-300 flex gap-2">
+            <span class="text-purple-400 font-bold shrink-0">02</span>
+            <span><strong class="text-white">职业选手对比系统</strong><br><span class="text-gray-400 text-xs">20+选手 × 12维，欧几里得距离自动匹配</span></span>
+          </li>
+          <li class="text-gray-300 flex gap-2">
+            <span class="text-cyan-400 font-bold shrink-0">03</span>
+            <span><strong class="text-white">ChromaDB 向量知识库</strong><br><span class="text-gray-400 text-xs">语义检索，支持按地图/类别过滤</span></span>
+          </li>
+          <li class="text-gray-300 flex gap-2">
+            <span class="text-amber-400 font-bold shrink-0">04</span>
+            <span><strong class="text-white">GSI 实时监控</strong><br><span class="text-gray-400 text-xs">比赛中实时推送数据 → 即时分析</span></span>
+          </li>
+          <li class="text-gray-300 flex gap-2">
+            <span class="text-emerald-400 font-bold shrink-0">05</span>
+            <span><strong class="text-white">全自动 Demo 定位</strong><br><span class="text-gray-400 text-xs">读 Steam 注册表，一键找到最近录像</span></span>
+          </li>
+          <li class="text-gray-300 flex gap-2">
+            <span class="text-pink-400 font-bold shrink-0">06</span>
+            <span><strong class="text-white">单文件 HTML 报告</strong><br><span class="text-gray-400 text-xs">图表全部 base64 内嵌，离线可看</span></span>
+          </li>
+          <li class="text-gray-300 flex gap-2">
+            <span class="text-indigo-400 font-bold shrink-0">07</span>
+            <span><strong class="text-white">长短期双记忆</strong><br><span class="text-gray-400 text-xs">JSON 文件长期记忆 + 对话上下文短期记忆</span></span>
+          </li>
+        </ul>
+      </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Slide 11: 标题冲击 — 结果展示 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide">
+      <div class="light-spot light-spot-1"></div>
+      <div class="light-spot light-spot-4"></div>
+      <div class="slide-content">
+        <span class="text-xs font-light text-gray-500 tracking-widest block mb-6">04 · 结果展示</span>
+        <h1 class="text-4xl font-black leading-tight">
+          用数据说话
+        </h1>
+        <p class="text-sm font-light text-gray-400 mt-6">所见即所得</p>
+        <p class="text-sm font-light text-gray-500 mt-2">推荐准备视频备份，以防现场状况</p>
+      </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Slide 12: [截图占位] HTML 报告首页 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide">
+      <div class="light-spot light-spot-2"></div>
+      <div class="light-spot light-spot-5"></div>
+      <div class="slide-content">
+        <span class="text-xs font-light text-gray-500 tracking-widest block mb-5">04 · 结果展示</span>
+        <h2 class="text-lg font-bold mb-4">HTML 报告首页</h2>
+        <div class="placeholder-box" style="margin:0 auto;width:90%;">
+          <div class="icon">📄</div>
+          <div class="label" style="font-size:0.9rem;">[截图待补充]</div>
+          <div class="label" style="margin-top:0.5rem;">建议截取：报告总览页</div>
+        </div>
+        <p class="text-xs text-gray-500 mt-3">包括：K/D、爆头率、ADR、Rating<br>首杀、残局胜率、多杀率等全景数据</p>
+      </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Slide 13: [截图占位] 击杀热力图 + AI 点评 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide">
+      <div class="light-spot light-spot-1"></div>
+      <div class="light-spot light-spot-3"></div>
+      <div class="slide-content">
+        <span class="text-xs font-light text-gray-500 tracking-widest block mb-5">04 · 结果展示</span>
+        <h2 class="text-lg font-bold mb-4">击杀热力图 + AI 点评</h2>
+        <div class="placeholder-box" style="margin:0 auto;width:90%;">
+          <div class="icon">🔥</div>
+          <div class="label" style="font-size:0.9rem;">[截图待补充]</div>
+          <div class="label" style="margin-top:0.5rem;">建议截取：热力图 + LLM 分析文本</div>
+        </div>
+        <p class="text-xs text-gray-500 mt-3">Matplotlib 深色主题热力图<br>+ 大模型生成的个性化训练建议</p>
+      </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Slide 14: [截图占位] 职业选手对比 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide">
+      <div class="light-spot light-spot-2"></div>
+      <div class="light-spot light-spot-4"></div>
+      <div class="slide-content">
+        <span class="text-xs font-light text-gray-500 tracking-widest block mb-5">04 · 结果展示</span>
+        <h2 class="text-lg font-bold mb-4">职业选手对比</h2>
+        <div class="placeholder-box" style="margin:0 auto;width:90%;">
+          <div class="icon">🏆</div>
+          <div class="label" style="font-size:0.9rem;">[截图待补充]</div>
+          <div class="label" style="margin-top:0.5rem;">建议截取：对比结果 + 最相似选手排名</div>
+        </div>
+        <p class="text-xs text-gray-500 mt-3">s1mple · ZywOo · NiKo · donk · m0NESY 等 20+ 选手<br>欧几里得距离自动找最像你的 3 个</p>
+      </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Slide 15: [截图占位] AI 对话 + GSI 监控 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide">
+      <div class="light-spot light-spot-3"></div>
+      <div class="light-spot light-spot-5"></div>
+      <div class="slide-content">
+        <span class="text-xs font-light text-gray-500 tracking-widest block mb-5">04 · 结果展示</span>
+        <h2 class="text-lg font-bold mb-4">AI 对话 + 实时监控</h2>
+        <div class="space-y-3" style="width:90%;margin:0 auto;">
+          <div class="placeholder-box" style="margin:0;">
+            <div class="icon">💬</div>
+            <div class="label">[截图待补充] AI 教练对话界面</div>
+          </div>
+          <div class="placeholder-box" style="margin:0;">
+            <div class="icon">📡</div>
+            <div class="label">[截图待补充] GSI 实时监控</div>
+          </div>
+        </div>
+        <p class="text-xs text-gray-500 mt-3">11 个 @tool + LangChain 自动路由<br>GSI 实时推送血量/武器/位置</p>
+      </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Slide 16: 标题冲击 — 分工 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide">
+      <div class="light-spot light-spot-4"></div>
+      <div class="light-spot light-spot-5"></div>
+      <div class="slide-content">
+        <span class="text-xs font-light text-gray-500 tracking-widest block mb-6">05 · 分工</span>
+        <h1 class="text-3xl font-black leading-tight">
+          各司其职
+        </h1>
+        <p class="text-sm font-light text-gray-400 mt-6">两人项目，各有所长</p>
+      </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Slide 17: 对比页 — 双人分工 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide">
+      <div class="light-spot light-spot-1"></div>
+      <div class="light-spot light-spot-2"></div>
+      <div class="slide-content">
+        <span class="text-xs font-light text-gray-500 tracking-widest block mb-5">05 · 分工</span>
+        <div class="flex gap-3 text-left" style="width:100%;">
+          <div class="compare-col highlight">
+            <p class="text-base font-bold text-blue-400 mb-2">李尚基</p>
+            <div class="w-8 h-0.5 bg-blue-500/50 mb-3"></div>
+            <ul class="space-y-2 text-xs text-gray-300">
+              <li>▸ Demo 解析引擎（parser.py）</li>
+              <li>▸ 数据可视化（visualization.py）</li>
+              <li>▸ HTML 报告生成（report.py）</li>
+              <li>▸ LLM 对话系统（dialog.py）</li>
+              <li>▸ 职业选手对比（pro_data.py）</li>
+              <li>▸ GSI 实时监控（live.py）</li>
+              <li>▸ 记忆系统（memory.py）</li>
+            </ul>
+          </div>
+          <div class="compare-col" style="border-color:rgba(139,92,246,0.3);background:rgba(139,92,246,0.08);">
+            <p class="text-base font-bold text-purple-400 mb-2">潘一鸣</p>
+            <div class="w-8 h-0.5 bg-purple-500/50 mb-3"></div>
+            <ul class="space-y-2 text-xs text-gray-300">
+              <li>▸ 战术知识库（知识库数据）</li>
+              <li>▸ ChromaDB 向量检索</li>
+              <li>▸ 战术推理引擎（pan_coach.py）</li>
+              <li>▸ 工具模块（工具函数）</li>
+              <li>▸ 地图点位分析</li>
+              <li>▸ 投掷物 / 武器 / 经济模型</li>
+            </ul>
+          </div>
+        </div>
+        <p class="text-xs text-gray-500 mt-4 text-center">数据驱动 × 知识驱动 = 完整的 AI 教练</p>
+      </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Slide 18: 结尾行动页 -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide">
+      <div class="light-spot light-spot-1"></div>
+      <div class="light-spot light-spot-2"></div>
+      <div class="light-spot light-spot-3"></div>
+      <div class="slide-content">
+        <p class="text-sm font-light text-gray-500 tracking-widest mb-4">尚鸣惊人</p>
+        <h1 class="text-3xl font-bold mb-6 leading-tight">
+          你离职业<br>只差一个 AI
+        </h1>
+        <div class="w-12 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mb-6"></div>
+        <p class="text-base font-light text-gray-400">李尚基 · 2025013285</p>
+        <p class="text-base font-light text-gray-400">潘一鸣</p>
+        <p class="text-sm font-light text-gray-500 mt-4">清华大学 · 2025</p>
+        <p class="text-xs text-gray-600 mt-6">谢谢！欢迎提问 🦊</p>
+      </div>
+    </div>
+    
+  </div>
+  
+  <div class="progress-bar" id="progressBar"></div>
+  <div class="page-number" id="pageNumber">1 / 18</div>
+  
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const progressBar = document.getElementById('progressBar');
+    const pageNumber = document.getElementById('pageNumber');
+    let currentSlide = 0;
+    
+    slides.forEach((_, index) => {
+      const dot = document.createElement('div');
+      dot.className = 'progress-dot' + (index === 0 ? ' active' : '');
+      dot.addEventListener('click', () => goToSlide(index));
+      progressBar.appendChild(dot);
+    });
+    
+    function updateSlides() {
+      slides.forEach((slide, index) => {
+        slide.classList.remove('active', 'prev');
+        if (index === currentSlide) {
+          slide.classList.add('active');
+        } else if (index < currentSlide) {
+          slide.classList.add('prev');
+        }
+      });
+      document.querySelectorAll('.progress-dot').forEach((dot, index) => {
+        dot.classList.toggle('active', index === currentSlide);
+      });
+      pageNumber.textContent = (currentSlide + 1) + ' / ' + slides.length;
+    }
+    
+    function nextSlide() { if (currentSlide < slides.length - 1) { currentSlide++; updateSlides(); } }
+    function prevSlide() { if (currentSlide > 0) { currentSlide--; updateSlides(); } }
+    function goToSlide(index) { currentSlide = index; updateSlides(); }
+    
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') { nextSlide(); }
+      else if (e.key === 'ArrowLeft') { prevSlide(); }
+    });
+    
+    let touchStartX = 0;
+    document.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+    document.addEventListener('touchend', (e) => {
+      const diff = touchStartX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) { diff > 0 ? nextSlide() : prevSlide(); }
+    });
+  </script>
+</body>
+</html>

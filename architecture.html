@@ -1,0 +1,265 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CS2-AI-COACH — 代码架构图</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #0f172a;
+    --fg: #e5e7eb;
+    --muted: #a3adbd;
+    --line: #94a3b8;
+    --neutral: #334155;
+    --input: #1e3a5f;
+    --process: #2e1a47;
+    --process2: #1a3a3a;
+    --storage: #0f3d3d;
+    --external: #3d2e0f;
+    --risk: #3d1515;
+    --highlight: #3b82f6;
+    --highlight2: #8b5cf6;
+  }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 13px/1.4 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  main {
+    width: 100%;
+    max-width: 1280px;
+    padding: 12px 16px;
+  }
+  svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    aspect-ratio: 16 / 9;
+  }
+  .title { font-size: 20px; font-weight: 700; fill: var(--fg); }
+  .subtitle { font-size: 11px; fill: var(--muted); }
+  .label { font-size: 12px; font-weight: 600; fill: var(--fg); }
+  .sublabel { font-size: 9px; fill: #cbd5e1; }
+  .label-white { font-size: 12px; font-weight: 600; fill: #fff; }
+  .small { font-size: 9px; fill: var(--muted); }
+  .node { stroke: var(--line); stroke-width: 1; rx: 5; ry: 5; }
+  .neutral { fill: var(--neutral); }
+  .input { fill: var(--input); }
+  .process { fill: var(--process); }
+  .process2 { fill: var(--process2); }
+  .storage { fill: var(--storage); }
+  .external { fill: var(--external); }
+  .risk { fill: var(--risk); }
+  .edge { stroke: var(--line); stroke-width: 1.5; fill: none; }
+  .edge-b { stroke: var(--highlight); stroke-width: 1.5; fill: none; }
+  .edge-p { stroke: var(--highlight2); stroke-width: 1.5; fill: none; }
+  .zone { fill: none; stroke: var(--line); stroke-width: 1; stroke-dasharray: 5 4; opacity: 0.6; }
+  .hl { fill: var(--highlight); }
+  .hl2 { fill: var(--highlight2); }
+  text { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+</style>
+<main>
+<svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- ── Title ── -->
+  <text x="640" y="26" text-anchor="middle" class="title">CS2-AI-COACH — 架构总览</text>
+  <text x="640" y="40" text-anchor="middle" class="subtitle">李尚基 × 潘一鸣  ·  清华大学 2025</text>
+
+  <!-- ── Zone 1: Input ── -->
+  <rect x="16" y="55" width="1248" height="76" class="zone" rx="6" />
+  <text x="28" y="68" class="small" fill="#93c5fd">INPUT</text>
+
+  <rect x="36" y="76" width="180" height="40" class="node input" />
+  <text x="126" y="95" text-anchor="middle" class="label-white">.dem 录像文件</text>
+  <text x="126" y="108" text-anchor="middle" class="sublabel">parser.py 输入源</text>
+
+  <rect x="248" y="76" width="180" height="40" class="node input" />
+  <text x="338" y="95" text-anchor="middle" class="label-white">GSI 实时数据</text>
+  <text x="338" y="108" text-anchor="middle" class="sublabel">live.py 实时推送</text>
+
+  <rect x="460" y="76" width="180" height="40" class="node input" />
+  <text x="550" y="95" text-anchor="middle" class="label-white">Steam 注册表</text>
+  <text x="550" y="108" text-anchor="middle" class="sublabel">自动 Demo 定位</text>
+
+  <rect x="672" y="76" width="180" height="40" class="node input" />
+  <text x="762" y="95" text-anchor="middle" class="label-white">LLM API</text>
+  <text x="762" y="108" text-anchor="middle" class="sublabel">qwen3.7-plus</text>
+
+  <!-- ── Zone 2: 李尚基 ── -->
+  <rect x="16" y="145" width="616" height="205" class="zone" rx="6" />
+  <rect x="16" y="139" width="616" height="15" fill="var(--highlight)" rx="3" opacity="0.8" />
+  <text x="324" y="150" text-anchor="middle" class="small" fill="#fff" font-weight="700">李尚基 · 数据分析引擎</text>
+
+  <rect x="32" y="163" width="270" height="40" class="node process" />
+  <text x="167" y="182" text-anchor="middle" class="label-white">parser.py</text>
+  <text x="167" y="195" text-anchor="middle" class="sublabel">Demo 解析 · 击杀/位置/武器</text>
+
+  <rect x="320" y="163" width="295" height="40" class="node process" />
+  <text x="467" y="182" text-anchor="middle" class="label-white">analysis.py</text>
+  <text x="467" y="195" text-anchor="middle" class="sublabel">特征提取 · 残局检测</text>
+
+  <line x1="302" y1="183" x2="318" y2="183" class="edge" marker-end="url(#arrow)" />
+
+  <rect x="32" y="218" width="270" height="40" class="node process" />
+  <text x="167" y="237" text-anchor="middle" class="label-white">visualization.py</text>
+  <text x="167" y="250" text-anchor="middle" class="sublabel">热力图 · 武器统计 · 雷达图</text>
+
+  <rect x="320" y="218" width="295" height="40" class="node process" />
+  <text x="467" y="237" text-anchor="middle" class="label-white">report.py</text>
+  <text x="467" y="250" text-anchor="middle" class="sublabel">单文件 HTML 报告生成</text>
+
+  <line x1="302" y1="238" x2="318" y2="238" class="edge" marker-end="url(#arrow)" />
+  <line x1="167" y1="203" x2="167" y2="216" class="edge" marker-end="url(#arrow)" />
+  <line x1="467" y1="203" x2="467" y2="216" class="edge" marker-end="url(#arrow)" />
+
+  <rect x="32" y="275" width="125" height="40" class="node storage" />
+  <text x="94" y="294" text-anchor="middle" class="label-white">memory.py</text>
+  <text x="94" y="307" text-anchor="middle" class="sublabel">长短期记忆</text>
+
+  <rect x="172" y="275" width="140" height="40" class="node storage" />
+  <text x="242" y="294" text-anchor="middle" class="label-white">pro_data.py</text>
+  <text x="242" y="307" text-anchor="middle" class="sublabel">20+ 职业选手数据</text>
+
+  <rect x="327" y="275" width="120" height="40" class="node process" />
+  <text x="387" y="294" text-anchor="middle" class="label-white">snapshot.py</text>
+  <text x="387" y="307" text-anchor="middle" class="sublabel">时刻快照</text>
+
+  <!-- ── Zone 3: 潘一鸣 ── -->
+  <rect x="648" y="145" width="616" height="205" class="zone" rx="6" />
+  <rect x="648" y="139" width="616" height="15" fill="var(--highlight2)" rx="3" opacity="0.8" />
+  <text x="956" y="150" text-anchor="middle" class="small" fill="#fff" font-weight="700">潘一鸣 · 战术知识引擎</text>
+
+  <rect x="662" y="163" width="135" height="40" class="node storage" />
+  <text x="729" y="180" text-anchor="middle" class="label-white">maps.py</text>
+  <text x="729" y="194" text-anchor="middle" class="sublabel">6 张地图点位</text>
+
+  <rect x="808" y="163" width="135" height="40" class="node storage" />
+  <text x="875" y="180" text-anchor="middle" class="label-white">grenades.py</text>
+  <text x="875" y="194" text-anchor="middle" class="sublabel">投掷物路线</text>
+
+  <rect x="954" y="163" width="135" height="40" class="node storage" />
+  <text x="1021" y="180" text-anchor="middle" class="label-white">weapons.py</text>
+  <text x="1021" y="194" text-anchor="middle" class="sublabel">武器属性系统</text>
+
+  <rect x="1100" y="163" width="148" height="40" class="node storage" />
+  <text x="1174" y="180" text-anchor="middle" class="label-white">economy.py</text>
+  <text x="1174" y="194" text-anchor="middle" class="sublabel">经济系统数据</text>
+
+  <rect x="662" y="218" width="155" height="40" class="node process2" />
+  <text x="739" y="235" text-anchor="middle" class="label-white">data_loader.py</text>
+  <text x="739" y="249" text-anchor="middle" class="sublabel">知识统一加载</text>
+
+  <rect x="830" y="218" width="155" height="40" class="node process2" />
+  <text x="907" y="235" text-anchor="middle" class="label-white">vector_store.py</text>
+  <text x="907" y="249" text-anchor="middle" class="sublabel">ChromaDB 向量检索</text>
+
+  <rect x="998" y="218" width="250" height="40" class="node process2" />
+  <text x="1123" y="235" text-anchor="middle" class="label-white">tools/ 工具模块</text>
+  <text x="1123" y="249" text-anchor="middle" class="sublabel">map / weapon / economy 分析</text>
+
+  <line x1="797" y1="183" x2="806" y2="183" class="edge" marker-end="url(#arrow-p)" />
+  <line x1="943" y1="183" x2="952" y2="183" class="edge" marker-end="url(#arrow-p)" />
+  <line x1="1089" y1="183" x2="1098" y2="183" class="edge" marker-end="url(#arrow-p)" />
+
+  <!-- ── Zone 4: Integration ── -->
+  <rect x="16" y="363" width="1248" height="62" class="zone" rx="6" />
+  <rect x="16" y="357" width="1248" height="15" fill="#065f46" rx="3" opacity="0.8" />
+  <text x="640" y="368" text-anchor="middle" class="small" fill="#fff" font-weight="700">集成层 · Integration</text>
+
+  <rect x="36" y="378" width="370" height="36" class="node neutral" />
+  <text x="221" y="396" text-anchor="middle" class="label">integration/__init__.py</text>
+  <text x="221" y="408" text-anchor="middle" class="sublabel">TacticalCoach / IntegratedCoach 接口</text>
+
+  <rect x="431" y="378" width="370" height="36" class="node neutral" />
+  <text x="616" y="396" text-anchor="middle" class="label">integration/pan_coach.py</text>
+  <text x="616" y="408" text-anchor="middle" class="sublabel">残局检测 + 知识库 + LLM 推理</text>
+
+  <rect x="826" y="378" width="370" height="36" class="node neutral" />
+  <text x="1011" y="396" text-anchor="middle" class="label">agent/ (agent_workflow.py)</text>
+  <text x="1011" y="408" text-anchor="middle" class="sublabel">Agent 工作流编排</text>
+
+  <!-- ── Zone 5: AI & Output ── -->
+  <rect x="16" y="438" width="1248" height="100" class="zone" rx="6" />
+  <rect x="16" y="432" width="1248" height="15" fill="#78350f" rx="3" opacity="0.8" />
+  <text x="640" y="443" text-anchor="middle" class="small" fill="#fff" font-weight="700">AI 对话 &amp; 输出</text>
+
+  <rect x="36" y="452" width="165" height="36" class="node external" />
+  <text x="118" y="471" text-anchor="middle" class="label">llm.py</text>
+  <text x="118" y="482" text-anchor="middle" class="sublabel">LLM 调用封装</text>
+
+  <rect x="220" y="452" width="200" height="36" class="node external" />
+  <text x="320" y="471" text-anchor="middle" class="label">dialog.py</text>
+  <text x="320" y="482" text-anchor="middle" class="sublabel">对话循环 + @tool 路由</text>
+
+  <rect x="440" y="452" width="220" height="36" class="node external" />
+  <text x="550" y="471" text-anchor="middle" class="label">tools/__init__.py</text>
+  <text x="550" y="482" text-anchor="middle" class="sublabel">11 个 @tool 装饰器函数</text>
+
+  <rect x="680" y="452" width="165" height="36" class="node external" />
+  <text x="762" y="471" text-anchor="middle" class="label">live.py</text>
+  <text x="762" y="482" text-anchor="middle" class="sublabel">GSI HTTP 服务</text>
+
+  <rect x="864" y="452" width="160" height="36" class="node" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5" />
+  <text x="944" y="471" text-anchor="middle" class="label-white" fill="#3b82f6">main.py</text>
+  <text x="944" y="482" text-anchor="middle" class="sublabel">CLI 入口</text>
+
+  <!-- Output -->
+  <rect x="170" y="500" width="260" height="28" class="node" fill="#065f46" stroke="#34d399" />
+  <text x="300" y="519" text-anchor="middle" class="label-white" fill="#34d399" font-size="11">📄 HTML 可视化报告</text>
+
+  <rect x="510" y="500" width="260" height="28" class="node" fill="#065f46" stroke="#34d399" />
+  <text x="640" y="519" text-anchor="middle" class="label-white" fill="#34d399" font-size="11">💬 AI 教练对话</text>
+
+  <rect x="850" y="500" width="260" height="28" class="node" fill="#065f46" stroke="#34d399" />
+  <text x="980" y="519" text-anchor="middle" class="label-white" fill="#34d399" font-size="11">🧠 残局战术指导</text>
+
+  <!-- ── Arrows ── -->
+  <path d="M126 116 L126 130 Q126 135 126 140 L126 161" class="edge" marker-end="url(#arrow)" />
+  <path d="M640 116 L640 130 Q640 135 640 140 L640 161" class="edge" marker-end="url(#arrow)" />
+
+  <path d="M324 315 L324 335 Q324 345 324 355 L324 376" class="edge" marker-end="url(#arrow)" />
+  <path d="M956 315 L956 335 Q956 345 956 355 L956 376" class="edge-b" marker-end="url(#arrow)" />
+  <path d="M640 414 L640 425 Q640 430 640 435 L640 450" class="edge" marker-end="url(#arrow)" />
+
+  <!-- Agent cross link -->
+  <path d="M632 238 L640 238 Q644 238 646 238" class="edge-p" marker-end="url(#arrow-p)" stroke-dasharray="5 3" />
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="var(--line)" />
+    </marker>
+    <marker id="arrow-p" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L10 5 L0 10 Z" fill="var(--highlight2)" />
+    </marker>
+  </defs>
+
+  <!-- ── Legend ── -->
+  <text x="28" y="554" class="small" fill="#9ca3af">图例</text>
+
+  <rect x="28" y="562" width="14" height="14" class="node input" />
+  <text x="46" y="574" class="small">输入</text>
+  <rect x="100" y="562" width="14" height="14" class="node process" />
+  <text x="118" y="574" class="small">李尚基模块</text>
+  <rect x="185" y="562" width="14" height="14" class="node process2" />
+  <text x="203" y="574" class="small">潘一鸣模块</text>
+  <rect x="275" y="562" width="14" height="14" class="node storage" />
+  <text x="293" y="574" class="small">数据/存储</text>
+  <rect x="360" y="562" width="14" height="14" class="node neutral" />
+  <text x="378" y="574" class="small">集成层</text>
+  <rect x="440" y="562" width="14" height="14" class="node external" />
+  <text x="458" y="574" class="small">AI/外部</text>
+  <rect x="520" y="562" width="14" height="14" class="node" fill="#065f46" />
+  <text x="538" y="574" class="small">输出产物</text>
+  <line x1="610" y1="569" x2="640" y2="569" class="edge" />
+  <text x="646" y="574" class="small">数据流</text>
+  <line x1="705" y1="569" x2="735" y2="569" class="edge-p" stroke-dasharray="5 3" />
+  <text x="741" y="574" class="small">Agent 协作</text>
+
+
+</svg>
+</main>
+</html>

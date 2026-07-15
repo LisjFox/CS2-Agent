@@ -7,10 +7,17 @@ import os
 from pathlib import Path
 from langchain_openai import ChatOpenAI
 
-# 从环境变量读 Key（未设置时为空字符串，LLM 功能降级）
-LLM_API_KEY = os.environ.get("CS2_LLM_API_KEY", "")
-LLM_API_BASE = os.environ.get("CS2_LLM_API_BASE", "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1")
-LLM_MODEL = os.environ.get("CS2_LLM_MODEL", "qwen3.7-plus")
+# 自动加载 .env 文件（如有），优先级：环境变量 > .env > 默认值
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).parent / ".env")
+except ImportError:
+    pass
+
+# 兼容两组变量名：.env 里 LLM_API_KEY / config.py 旧版 CS2_LLM_API_KEY
+LLM_API_KEY = os.environ.get("LLM_API_KEY") or os.environ.get("CS2_LLM_API_KEY", "")
+LLM_API_BASE = os.environ.get("LLM_BASE_URL") or os.environ.get("CS2_LLM_API_BASE", "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1")
+LLM_MODEL = os.environ.get("LLM_MODEL_NAME") or os.environ.get("CS2_LLM_MODEL", "qwen3.7-plus")
 
 model = ChatOpenAI(
     api_key=LLM_API_KEY,
