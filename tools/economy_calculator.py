@@ -3,8 +3,10 @@
 from typing import Dict, Optional
 from knowledge_base.data.economy import ECONOMY_CONSTANTS
 from knowledge_base.data.weapons import WEAPON_BUILDS
+from langchain_core.tools import tool
 
 
+@tool
 def calculate_team_economy(
     team: str,
     current_money: int,
@@ -114,6 +116,7 @@ def calculate_team_economy(
     }
 
 
+@tool
 def get_eco_strategy(team: str, round_number: int, score_t: int, score_ct: int) -> str:
     """根据比分和回合数给出经济策略建议"""
     is_match_point = (team == "T" and score_t >= 12) or (team == "CT" and score_ct >= 12)

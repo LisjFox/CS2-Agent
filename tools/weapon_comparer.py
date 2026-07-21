@@ -2,6 +2,7 @@
 
 from typing import Dict, List, Optional
 from knowledge_base.data.weapons import WEAPON_CATEGORIES
+from langchain_core.tools import tool
 
 
 # 武器核心参数数据库
@@ -128,6 +129,7 @@ WEAPON_STATS = {
 }
 
 
+@tool
 def compare_weapons(weapon_names: List[str]) -> str:
     """比较多把武器的参数
 
@@ -186,6 +188,7 @@ def compare_weapons(weapon_names: List[str]) -> str:
     return "\n".join(lines)
 
 
+@tool
 def recommend_weapon(budget: int, side: str, play_style: str = "all_round") -> str:
     """根据预算和阵营推荐武器
 

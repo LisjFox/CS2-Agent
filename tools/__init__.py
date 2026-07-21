@@ -1,6 +1,7 @@
 """工具模块 — @tool 装饰器函数 + 注册表"""
 
-from langchain_core.tools import tool
+import importlib, pkgutil, inspect
+from langchain_core.tools import tool, BaseTool
 from memory import load_memory, get_history
 
 
@@ -197,11 +198,6 @@ def get_pro_leaderboard(metric: str = "kd", top_n: int = 5) -> str:
 #  @tool: 潘一鸣知识库 — 向量检索 / 战术建议
 # ═══════════════════════════════════════════════════════
 
-from .economy_calculator import calculate_team_economy, get_eco_strategy, calculate_equipment_cost
-from .weapon_comparer import compare_weapons, recommend_weapon
-from .map_analyzer import analyze_map, get_tactical_advice
-
-
 @tool
 def query_knowledge(query: str, map_name: str = "", top_k: int = 3) -> str:
     """从 CS2 战术知识库中语义检索信息。覆盖地图点位、投掷物路线、武器属性、经济规则。
@@ -305,50 +301,46 @@ def get_eco_advice(money: int, round_num: int, side: str = "T", won_last: bool =
 
 
 # ═══════════════════════════════════════════════════════
-#  潘一鸣的工具模块（子模块 — 手工注册表）
+#  自动发现 — 扫描所有子模块收集 @tool
 # ═══════════════════════════════════════════════════════
 
-# 注: economy_calculator / weapon_comparer / map_analyzer 的
-# 原生函数已在上面通过 @tool 包装，下文手工注册表保留兼容
+def _scan_all_tools():
+    """扫描 tools/ 下所有子模块，收集全部 @tool 函数。"""
+    seen = set()
+    tools = []
+    # 当前 __init__.py 中的 @tool
+    for v in globals().values():
+        if isinstance(v, BaseTool) and id(v) not in seen:
+            seen.add(id(v))
+            tools.append(v)
+    # 子模块中的 @tool
+    for importer, modname, ispkg in pkgutil.iter_modules(__path__):
+        if modname.startswith('_'):
+            continue
+        try:
+            module = importlib.import_module(f'.{modname}', __package__)
+            for name, obj in inspect.getmembers(module):
+                if isinstance(obj, BaseTool) and id(obj) not in seen:
+                    seen.add(id(obj))
+                    tools.append(obj)
+        except Exception:
+            pass  # 忽略导入失败的模块
+    return sorted(tools, key=lambda t: t.name)
 
-TOOL_REGISTRY = {
-    "economy_calculator": {
-        "function": calculate_team_economy,
-        "description": "计算团队经济状况，给出购买建议和未来几局的经济规划。",
-    },
-    "weapon_compare": {
-        "function": compare_weapons,
-        "description": "对比多把 CS2 武器的详细参数，包括伤害、价格、穿甲率、射速等。",
-    },
-    "weapon_recommend": {
-        "function": recommend_weapon,
-        "description": "根据预算、阵营和打法风格推荐最佳武器选择。",
-    },
-    "map_analyze": {
-        "function": analyze_map,
-        "description": "查询指定地图的详细信息，包括点位报点、战术策略等。",
-    },
-    "tactical_advice": {
-        "function": get_tactical_advice,
-        "description": "根据地图、阵营和具体场景给出定制化战术建议。",
-    },
-    "eco_strategy": {
-        "function": get_eco_strategy,
-        "description": "根据比分和回合数给出经济策略建议。",
-    },
-}
+
+# 所有 @tool 函数的统一列表（LangChain bind_tools 直接用）
+TOOL_LIST = _scan_all_tools()
 
 
 def get_tool_descriptions() -> str:
-    """获取所有工具的描述，用于 LLM 函数调用."""
-    descriptions = []
-    for name, meta in TOOL_REGISTRY.items():
-        descriptions.append(f"- {name}: {meta['description']}")
-    return "\n".join(descriptions)
+    """获取所有工具的描述."""
+    return "\n".join(f"- {t.name}: {t.description}" for t in TOOL_LIST)
 
 
 def call_tool(tool_name: str, **kwargs):
-    """调用指定的工具."""
-    if tool_name not in TOOL_REGISTRY:
-        raise ValueError(f"未知工具: {tool_name}，可用工具: {list(TOOL_REGISTRY.keys())}")
-    return TOOL_REGISTRY[tool_name]["function"](**kwargs)
+    """调用指定名称的工具."""
+    for t in TOOL_LIST:
+        if t.name == tool_name:
+            return t.invoke(kwargs)
+    names = [t.name for t in TOOL_LIST]
+    raise ValueError(f"未知工具: {tool_name}，可用工具: {names}")

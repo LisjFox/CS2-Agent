@@ -2,6 +2,7 @@
 
 from typing import Dict, List, Optional
 from knowledge_base.data.maps import MAP_KNOWLEDGE, AVAILABLE_MAPS
+from langchain_core.tools import tool
 
 
 # 地图别名映射
@@ -34,6 +35,7 @@ def _normalize_map_name(name: str) -> str:
     return name
 
 
+@tool
 def analyze_map(map_name: str, topic: str = "overview") -> Dict:
     """分析指定地图的信息
 
@@ -93,6 +95,7 @@ def analyze_map(map_name: str, topic: str = "overview") -> Dict:
     }
 
 
+@tool
 def get_tactical_advice(
     map_name: str,
     side: str,

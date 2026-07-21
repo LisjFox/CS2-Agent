@@ -6,25 +6,10 @@ from analysis import build_system_prompt
 from llm import call_llm, call_llm_with_tools
 from memory import load_memory, save_memory, get_history, format_history, \
     add_session, manage_short_term
-from tools import (get_player_history, get_player_trend, get_all_players,
-    get_training_plan, get_weapon_advice, compare_with_pro, get_pro_leaderboard,
-    query_knowledge, get_map_tactics, get_grenade_routes, get_eco_advice)
+from tools import TOOL_LIST
 from config import LLM_API_KEY
 
-# 注册所有工具（含潘一鸣知识库）
-TOOLS = [
-    get_player_history,
-    get_player_trend,
-    get_all_players,
-    get_training_plan,
-    get_weapon_advice,
-    compare_with_pro,
-    get_pro_leaderboard,
-    query_knowledge,
-    get_map_tactics,
-    get_grenade_routes,
-    get_eco_advice,
-]
+TOOLS = TOOL_LIST
 
 
 def dialog_loop(coach_data, player_name, llm_response=None, err=None,
