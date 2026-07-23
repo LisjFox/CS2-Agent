@@ -2,9 +2,10 @@
 
 from langchain_core.tools import tool
 from urllib.parse import quote_plus
+from config import BRAVE_SEARCH_KEY
 
 
-_API_KEY = ""  # 如有 Brave Search / SerpAPI key 可填
+_API_KEY = BRAVE_SEARCH_KEY  # 从 config.py 读，填 key 后自动走 Brave API
 
 
 @tool

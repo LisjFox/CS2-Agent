@@ -19,6 +19,11 @@ LLM_API_KEY = os.environ.get("LLM_API_KEY") or os.environ.get("CS2_LLM_API_KEY",
 LLM_API_BASE = os.environ.get("LLM_BASE_URL") or os.environ.get("CS2_LLM_API_BASE", "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1")
 LLM_MODEL = os.environ.get("LLM_MODEL_NAME") or os.environ.get("CS2_LLM_MODEL", "qwen3.7-plus")
 
+# --- Brave Search API Key（可选）---
+# 注册: https://brave.com/search/api/
+BRAVE_SEARCH_KEY = os.environ.get("BRAVE_SEARCH_KEY", "")
+
+
 model = ChatOpenAI(
     api_key=LLM_API_KEY,
     base_url=LLM_API_BASE,
