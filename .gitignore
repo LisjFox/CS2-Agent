@@ -26,10 +26,6 @@ build/
 .idea/
 .vscode/
 
-# ── 队友代码副本（如有） ──
-teammate_code/
-teammate_v2/
-
 # ── 选题报告 ──
 选题报告_*.docx
 
