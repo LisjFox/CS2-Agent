@@ -53,19 +53,20 @@ def call_llm_with_tools(messages, tools, temperature=0.7, max_tokens=4096):
 
         # 如果有 tool calls
         if reply.tool_calls:
+            # 把 AI 的回复（含 tool_calls 元信息）原样加入消息链
+            langchain_msgs.append(reply)
+
             for tc in reply.tool_calls:
                 func_name = tc["name"]
                 args = tc["args"]
 
-                # 找到对应的函数并执行
                 for tool_fn in tools:
                     if tool_fn.name == func_name:
-                        result = tool_fn.invoke(args)
-                        langchain_msgs.append(AIMessage(content=reply.content) if reply.content else None)
+                        result = tool_fn.invoke(args)  # 返回 ToolMessage
                         langchain_msgs.append(result)
                         break
 
-            # 把工具结果发回 LLM
+            # 把工具结果发回 LLM，让它生成最终回答
             final_reply = model_with_tools.invoke(langchain_msgs)
             return final_reply.content, None
 
