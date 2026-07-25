@@ -1,0 +1,136 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CS2 Agent — @tool 调用流程</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f8fafc; --fg: #172033; --muted: #5b6475; --line: #64748b;
+    --neutral: #e2e8f0; --input: #bfdbfe; --process: #c7d2fe;
+    --storage: #a7f3d0; --external: #fde68a; --risk: #fecaca; --ok: #d1fae5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f172a; --fg: #e5e7eb; --muted: #94a3b8; --line: #64748b;
+      --neutral: #334155; --input: #1e3a5f; --process: #3730a3;
+      --storage: #065f46; --external: #78350f; --risk: #7f1d1d; --ok: #064e3b;
+    }
+  }
+  body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.4 ui-sans-serif,system-ui,sans-serif; }
+  main { max-width:800px; margin:32px auto; padding:0 20px; }
+  svg { width:100%; height:auto; display:block; }
+  .title { font-size:20px; font-weight:650; fill:var(--fg); }
+  .label { font-size:13px; font-weight:600; fill:var(--fg); }
+  .small { font-size:11px; fill:var(--muted); }
+  .node { stroke:var(--line); stroke-width:1; rx:8; ry:8; }
+  .neutral { fill:var(--neutral); } .input { fill:var(--input); }
+  .process { fill:var(--process); } .storage { fill:var(--storage); }
+  .external { fill:var(--external); } .ok { fill:var(--ok); }
+  .edge { stroke:var(--line); stroke-width:1.5; fill:none; }
+  .edge-dash { stroke:var(--line); stroke-width:1.5; fill:none; stroke-dasharray:6 4; }
+  .arrow { fill:var(--line); }
+</style>
+<main>
+<svg viewBox="0 0 740 840" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path class="arrow" d="M0 0l10 5-10 5z"/>
+    </marker>
+  </defs>
+
+  <text x="370" y="30" class="title" text-anchor="middle">CS2 Agent &mdash; @tool 调用流程</text>
+
+  <!-- 第1层：用户输入 -->
+  <rect x="270" y="60" width="200" height="44" class="node input"/>
+  <text x="370" y="80" class="label" text-anchor="middle">用户输入</text>
+  <text x="370" y="96" class="small" text-anchor="middle">"AK-47 多少钱?"</text>
+
+  <line x1="370" y1="104" x2="370" y2="130" class="edge" marker-end="url(#arrow)"/>
+
+  <!-- 第2层：dialog.py -->
+  <rect x="225" y="130" width="290" height="52" class="node process"/>
+  <text x="370" y="150" class="label" text-anchor="middle">dialog.py / call_llm_with_tools()</text>
+  <text x="370" y="168" class="small" text-anchor="middle">TOOLS = TOOL_LIST (20 @tool) + bind_tools()</text>
+
+  <line x1="370" y1="182" x2="370" y2="208" class="edge" marker-end="url(#arrow)"/>
+
+  <!-- 第3层：LLM 判断 -->
+  <rect x="195" y="208" width="350" height="60" class="node external"/>
+  <text x="370" y="232" class="label" text-anchor="middle">LLM (qwen3.7-plus)</text>
+  <text x="370" y="250" class="small" text-anchor="middle">收到 20 个 tool schema + 系统提示 + 用户问题</text>
+  <text x="370" y="264" class="small" text-anchor="middle">判断: 直接答 or 调 tool?</text>
+
+  <!-- 两条分支 -->
+  <line x1="320" y1="268" x2="220" y2="300" class="edge" marker-end="url(#arrow)"/>
+  <line x1="420" y1="268" x2="520" y2="300" class="edge" marker-end="url(#arrow)"/>
+
+  <!-- 分支A：直接回复 -->
+  <rect x="80" y="300" width="280" height="44" class="node ok"/>
+  <text x="220" y="320" class="label" text-anchor="middle">直接回复</text>
+  <text x="220" y="336" class="small" text-anchor="middle">return reply.content</text>
+
+  <line x1="220" y1="344" x2="220" y2="500" class="edge" marker-end="url(#arrow)"/>
+
+  <!-- 分支B：调 tool -->
+  <rect x="420" y="300" width="240" height="44" class="node process"/>
+  <text x="540" y="320" class="label" text-anchor="middle">AI: reply.tool_calls</text>
+  <text x="540" y="336" class="small" text-anchor="middle">name + args</text>
+
+  <line x1="540" y1="344" x2="540" y2="370" class="edge" marker-end="url(#arrow)"/>
+
+  <!-- 执行 tool -->
+  <rect x="420" y="370" width="240" height="44" class="node storage"/>
+  <text x="540" y="390" class="label" text-anchor="middle">执行 @tool 函数</text>
+  <text x="540" y="406" class="small" text-anchor="middle">tool_fn.invoke(args) -> ToolMessage</text>
+
+  <line x1="540" y1="414" x2="540" y2="440" class="edge" marker-end="url(#arrow)"/>
+
+  <!-- ToolMessage -->
+  <rect x="420" y="440" width="240" height="44" class="node neutral"/>
+  <text x="540" y="460" class="label" text-anchor="middle">ToolMessage 追加到消息链</text>
+  <text x="540" y="476" class="small" text-anchor="middle">AIMessage 保留 tool_calls 元信息</text>
+
+  <line x1="540" y1="484" x2="540" y2="510" class="edge" marker-end="url(#arrow)"/>
+
+  <!-- 再调 LLM -->
+  <rect x="400" y="510" width="280" height="44" class="node external"/>
+  <text x="540" y="530" class="label" text-anchor="middle">LLM 收到结果，生成最终回答</text>
+  <text x="540" y="546" class="small" text-anchor="middle">model_with_tools.invoke()</text>
+
+  <line x1="540" y1="554" x2="540" y2="580" class="edge" marker-end="url(#arrow)"/>
+
+  <!-- 输出 -->
+  <rect x="420" y="580" width="240" height="44" class="node ok"/>
+  <text x="540" y="600" class="label" text-anchor="middle">最终回答</text>
+  <text x="540" y="616" class="small" text-anchor="middle">"AK-47 $2700，T 侧主战步枪"</text>
+
+  <line x1="540" y1="624" x2="540" y2="660" class="edge" marker-end="url(#arrow)"/>
+
+  <rect x="440" y="660" width="200" height="40" class="node input"/>
+  <text x="540" y="680" class="label" text-anchor="middle">输出给用户</text>
+
+  <!-- 右侧区域：TOOL_LIST 说明 -->
+  <rect x="60" y="420" width="300" height="230" class="node neutral" stroke-dasharray="6 5" fill="none"/>
+  <text x="72" y="442" class="label">TOOL_LIST (20 @tool)</text>
+  <text x="72" y="466" class="small">数据类: get_player_trend,</text>
+  <text x="78" y="482" class="small">compare_with_pro, get_pro_leaderboard</text>
+  <text x="72" y="502" class="small">知识库: query_knowledge,</text>
+  <text x="78" y="518" class="small">lookup_knowledge, get_eco_advice</text>
+  <text x="72" y="538" class="small">经济/武器/地图: calculate_team_economy,</text>
+  <text x="78" y="554" class="small">compare_weapons, analyze_map ...</text>
+  <text x="72" y="574" class="small">互联网: web_search, web_fetch</text>
+  <text x="72" y="594" class="small">训练: get_training_plan,</text>
+  <text x="78" y="610" class="small">get_weapon_advice</text>
+  <text x="72" y="634" class="small">自动发现: 新建 .py 文件 + @tool</text>
+  <text x="78" y="650" class="small">后自动进入列表，0 配置</text>
+
+  <!-- 底图 -->
+  <rect x="60" y="680" width="300" height="120" class="node neutral" stroke-dasharray="6 5" fill="none"/>
+  <text x="72" y="702" class="label">图例</text>
+  <rect x="72" y="712" width="16" height="16" class="node input"/><text x="96" y="726" class="small">用户输入/输出</text>
+  <rect x="72" y="734" width="16" height="16" class="node process"/><text x="96" y="748" class="small">处理逻辑 (dialog.py / llm.py)</text>
+  <rect x="72" y="756" width="16" height="16" class="node storage"/><text x="96" y="770" class="small">工具执行 (tool_fn.invoke)</text>
+  <rect x="72" y="778" width="16" height="16" class="node external"/><text x="96" y="792" class="small">LLM / 外部 API</text>
+</svg>
+</main>
+</html>
