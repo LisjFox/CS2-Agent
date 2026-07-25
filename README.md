@@ -78,10 +78,15 @@ py -3.13 main.py --latest --player "基666"
 
 | 模块 | 功能 |
 |------|------|
-| `tools/__init__.py` | 11 个 @tool 函数（7 个你的 + 4 个潘一鸣知识库工具） |
-| `dialog.py` | LangChain 对话循环 + @tool 自动路由 |
-| `llm.py` | LLM 调用（单次/对话/带工具） |
-| `config.py` | 模型配置、颜色常量、武器名映射 |
+| `tools/__init__.py` | `_scan_all_tools()` 自动发现 + `TOOL_LIST`（20 个 @tool） |
+| `tools/web_search.py` | 互联网搜索 & 网页抓取（@tool: web_search / web_fetch） |
+| `tools/kb_lookup.py` | 知识库原生数据查询（@tool: lookup_knowledge） |
+| `tools/economy_calculator.py` | 经济计算（@tool: calculate_team_economy / get_eco_strategy） |
+| `tools/weapon_comparer.py` | 武器对比推荐（@tool: compare_weapons / recommend_weapon） |
+| `tools/map_analyzer.py` | 地图分析战术（@tool: analyze_map / get_tactical_advice） |
+| `dialog.py` | LangChain 对话循环 + `TOOLS = TOOL_LIST` 自动路由 |
+| `llm.py` | LLM 调用（单次/对话/带工具），支持链式 tool call |
+| `config.py` | 模型配置、`BRAVE_SEARCH_KEY`、颜色常量
 
 ### 集成层
 
@@ -101,28 +106,55 @@ py -3.13 main.py --latest --player "基666"
 
 ---
 
-## 对话模式支持的 11 个工具
+## 对话模式支持的 20 个 @tool
 
-### 你的工具
+> 自动发现机制：在 `tools/` 下新建任意 `.py` 文件 + 写 `@tool` 装饰器，
+> 启动时自动进入 `TOOL_LIST`，无需任何手动注册。
 
-| 工具 | 说明 |
-|------|------|
+### 数据类
+
+| @tool | 说明 |
+|-------|------|
 | `get_player_history` | 查询玩家历史比赛记录 |
-| `get_player_trend` | 分析某项指标的趋势（kd / hs_pct 等） |
+| `get_player_trend` | 分析指标趋势（kd / hs_pct 等） |
 | `get_all_players` | 查看所有记录过的玩家 |
-| `get_training_plan` | 获取每日训练计划（30min/1h/2h 三档） |
-| `get_weapon_advice` | 特定武器的训练建议 |
 | `compare_with_pro` | 与职业选手对比 / 自动找最相似选手 |
 | `get_pro_leaderboard` | 职业选手排行榜（按任意指标排序） |
 
-### 潘一鸣知识库工具
+### 训练类
 
-| 工具 | 说明 |
-|------|------|
-| `query_knowledge` | 语义检索整库（地图/投掷物/武器/经济），支持按地图过滤 |
-| `get_map_tactics` | 根据地图 + 阵营 + 场景给战术建议 |
-| `get_grenade_routes` | 查特定地图的投掷物路线 |
+| @tool | 说明 |
+|-------|------|
+| `get_training_plan` | 每日训练计划（30min/1h/2h） |
+| `get_weapon_advice` | 特定武器的训练建议 |
+
+### 潘一鸣知识库
+
+| @tool | 说明 |
+|-------|------|
+| `query_knowledge` | 语义检索整库（地图/道具/武器/经济） |
+| `lookup_knowledge` | 直接查询原片数据（/weapon/map/grenade/economy/builds） |
+| `get_map_tactics` | 地图 + 阵营 + 场景战术建议 |
+| `get_grenade_routes` | 特定地图投掷物路线 |
 | `get_eco_advice` | 经济分析 + 起枪建议 |
+
+### 经济/武器/地图
+
+| @tool | 说明 |
+|-------|------|
+| `calculate_team_economy` | 团队经济计算（来自 economy_calculator.py） |
+| `get_eco_strategy` | 经济策略规划 |
+| `compare_weapons` | 武器参数对比（来自 weapon_comparer.py） |
+| `recommend_weapon` | 预算+阵营武器推荐 |
+| `analyze_map` | 地图点位/战术分析（来自 map_analyzer.py） |
+| `get_tactical_advice` | 场景化战术建议 |
+
+### 互联网
+
+| @tool | 说明 |
+|-------|------|
+| `web_search` | 搜索互联网（Bing HTML / Brave API 双模式） |
+| `web_fetch` | 抓取网页正文 |
 
 ---
 
@@ -137,8 +169,11 @@ parser.py 解析数据（击杀/位置/武器/选手 + 回合分段）
   ├─→ visualization.py → report.py → HTML 报告（击杀热力图/武器统计/选手对比/击杀距离）
   │
   ├─→ dialog.py → AI 教练对话
-  │      ├─ 调用 @tool 工具（历史/趋势/训练/武器/职业对比）
-  │      └─ 调用 @tool 工具（潘一鸣知识库：地图战术/投掷物/经济/语义检索）
+  │      └─ LLM 自动路由 20 个 @tool（数据/训练/知识库/经济/武器/地图/互联网）
+  │            ├─ 数据类：历史记录 / 趋势 / 职业对比 / 排行榜
+  │            ├─ 知识库：语义检索 / 原生数据查询 / 地图战术 / 投掷物 / 经济
+  │            ├─ 工具类：经济计算 / 武器对比 / 地图分析
+  │            └─ 互联网：web_search / web_fetch（实时信息）
   │
   └─→ integration/pan_coach.py
         ├─ 残局检测：从数据中找值得分析的回合
@@ -192,4 +227,5 @@ model = ChatOpenAI(
 | 实时 | CS2 Game State Integration |
 | 播放器定位 | Steam 注册表 + libraryfolders.vdf 全自动扫描 |
 | 报告 | 单文件 HTML（全部资源内嵌，离线可用） |
+| 工具系统 | 自动发现 `_scan_all_tools()` — 新建 `.py` + `@tool` 即注册 |
 | 语言 | Python 3.13 |
