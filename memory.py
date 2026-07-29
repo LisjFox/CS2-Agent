@@ -4,7 +4,8 @@ import json
 import time
 from pathlib import Path
 
-MEMORY_FILE = Path.home() / ".cs2_agent_memory.json"
+# 长期记忆文件 — 放在项目根目录，可通过 git 共享
+MEMORY_FILE = Path(__file__).parent / ".cs2_agent_memory.json"
 
 
 def load_memory():

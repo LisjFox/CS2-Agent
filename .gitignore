@@ -11,7 +11,6 @@ build/
 **/config_local.py
 
 # ── 用户数据 ──
-.cs2_agent_memory.json
 .cs2_agent_vector_db/
 
 # ── Demo 文件 ──
