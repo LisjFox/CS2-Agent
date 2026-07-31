@@ -134,7 +134,7 @@ py -3.13 main.py --latest --player "基666"
 | @tool | 说明 |
 |-------|------|
 | `query_knowledge` | 语义检索整库（地图/道具/武器/经济） |
-| `lookup_knowledge` | 直接查询原片数据（/weapon/map/grenade/economy/builds） |
+| `lookup_knowledge` | 直接查询原生数据（/weapon/map/grenade/economy/builds） |
 | `get_map_tactics` | 地图 + 阵营 + 场景战术建议 |
 | `get_grenade_routes` | 特定地图投掷物路线 |
 | `get_eco_advice` | 经济分析 + 起枪建议 |
