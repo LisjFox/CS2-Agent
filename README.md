@@ -37,6 +37,7 @@ py -3.13 main.py --latest --player "基666"
 | `python live.py --install` | 安装 GSI 实时推送配置 |
 | `python live.py --monitor` | 启动实时监控 |
 | `python test_integration.py` | 运行合体测试（数据→战术分析全流程） |
+| `python merge_memory.py other.json` | 合并记忆文件（解决多人共享冲突） |
 
 ---
 
